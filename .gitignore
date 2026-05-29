@@ -1,0 +1,31 @@
+# Environment secrets - NEVER COMMIT
+.env
+*.env.local
+
+# Database files - contains user data
+db/
+*.json
+!package*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+expired-check-result.txt
