@@ -506,6 +506,12 @@
             <div class="stat-card">
                 <div class="stat-label">Your Credits</div>
                 <div class="stat-value"><%= reseller.credits %></div>
+                <div style="font-size: 12px; color: #64748b;">For extending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Trial Credits</div>
+                <div class="stat-value"><%= reseller.trialCredits || 0 %></div>
+                <div style="font-size: 12px; color: #64748b;">For new trials</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Total Clients</div>
@@ -514,10 +520,6 @@
             <div class="stat-card">
                 <div class="stat-label">Active Clients</div>
                 <div class="stat-value"><%= clients.filter(c => !c.isExpired).length %></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Expiring Soon</div>
-                <div class="stat-value" id="expiringCount" style="color: #facc15;">-</div>
             </div>
         </div>
         

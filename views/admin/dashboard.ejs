@@ -460,7 +460,7 @@
                                 <% resellers.forEach(r => { %>
                                 <tr data-name="<%= r.username.toLowerCase() %>">
                                     <td><strong><%= r.username %></strong></td>
-                                    <td><%= r.credits %></td>
+                                    <td><%= r.credits %> (<%= r.trialCredits || 0 %> trials)</td>
                                     <td><%= r.client_count || 0 %> (<%= r.paid_count || 0 %> paid)</td>
                                     <td>
                                         <% if (r.lastLogin) { %>
