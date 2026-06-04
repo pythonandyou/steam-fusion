@@ -535,11 +535,13 @@ app.post('/admin/reseller/toggle', requireAdmin, (req, res) => {
     const reseller = data.resellers.find(r => r.id === parseInt(resellerId));
     
     if (reseller) {
-        reseller.active = !reseller.active;
+        reseller.active = reseller.active === false ? true : false;
+        console.log(`Toggled reseller ${reseller.username} to active=${reseller.active}`);
         saveData();
+        res.json({ success: true, active: reseller.active });
+    } else {
+        res.json({ success: false, error: 'Reseller not found' });
     }
-    
-    res.json({ success: true });
 });
 
 // Delete reseller and all their clients
