@@ -113,6 +113,8 @@ async function enableJellyfinUser(jellyfinId) {
         EnableAllChannels: false,
         EnableRemoteAccess: true,
         EnableMediaPlayback: true,
+        EnableLiveTvAccess: true,
+        EnableLiveTvManagement: false,
         EnableContentDownloading: false,
         EnableSyncTranscoding: false,
         EnableMediaConversion: false,
@@ -134,6 +136,8 @@ async function disableJellyfinUser(jellyfinId) {
         EnableAllChannels: false,
         EnableRemoteAccess: false,
         EnableMediaPlayback: false,
+        EnableLiveTvAccess: false,
+        EnableLiveTvManagement: false,
         EnableContentDownloading: false,
         EnableSyncTranscoding: false,
         EnableMediaConversion: false,
@@ -225,6 +229,8 @@ async function disableJellyfinUser(jellyfinId) {
         EnableAllChannels: false,
         EnableRemoteAccess: false,
         EnableMediaPlayback: false,
+        EnableLiveTvAccess: false,
+        EnableLiveTvManagement: false,
         AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
         PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider"
     });
@@ -236,7 +242,7 @@ async function enableJellyfinUser(jellyfinId) {
     
     await jellyfinRequest(`/Users/${jellyfinId}/Policy`, 'POST', {
         IsAdministrator: false,
-        IsHidden: true,
+        IsHidden: false,
         IsDisabled: false,
         EnableAllDevices: true,
         EnableAllFolders: true,
@@ -253,7 +259,7 @@ async function enableJellyfinUser(jellyfinId) {
         EnableRemoteControlOfOtherUsers: false,
         EnableSharedDeviceControl: false,
         EnableLiveTvManagement: false,
-        EnableLiveTvAccess: false,
+        EnableLiveTvAccess: true,
         EnableUserPreferenceAccess: true,
         AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
         PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider",
