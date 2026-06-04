@@ -523,6 +523,19 @@
             </div>
         </div>
         
+        <!-- Expiring Soon Alert -->
+        <div id="expiringAlert" style="display: none; margin-bottom: 20px;">
+            <div class="card" style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3);">
+                <div style="padding: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <span style="font-size: 18px;">⚠️</span>
+                        <span style="font-weight: 600; color: #facc15;">Expiring Soon (<span id="expiringCount">0</span>)</span>
+                    </div>
+                    <div id="expiringList" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Previous Login Info -->
         <% if (reseller.previousLogin) { %>
         <div class="card" style="margin-bottom: 20px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.2);">
@@ -561,14 +574,6 @@
             </div>
         </div>
         <% } %>
-        
-        <!-- Expiring Soon Alert -->
-        <div id="expiringAlert" style="display: none; margin-bottom: 20px;">
-            <div class="alert alert-warning" style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15; padding: 15px 20px; border-radius: 10px;">
-                <strong>⚠️ Clients Expiring Soon!</strong>
-                <div id="expiringList" style="margin-top: 10px;"></div>
-            </div>
-        </div>
         
         <div class="content-grid">
             <!-- Clients Table -->
