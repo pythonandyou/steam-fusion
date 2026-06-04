@@ -14,8 +14,8 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 // Jellyfin Configuration (set via environment variable)
-const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://65.21.197.246:8096';
-const JELLYFIN_API_KEY = process.env.JELLYFIN_API_KEY || 'b54906fda5c5432ab6cdac3e4f566c2e';
+const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://localhost:8096';
+const JELLYFIN_API_KEY = process.env.JELLYFIN_API_KEY || 'YOUR_JELLYFIN_API_KEY';
 
 // Load or initialize data
 let data = {
