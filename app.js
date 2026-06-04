@@ -14,8 +14,8 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 // Jellyfin Configuration (set via environment variable)
-const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://localhost:8096';
-const JELLYFIN_API_KEY = process.env.JELLYFIN_API_KEY || '';
+const JELLYFIN_URL = process.env.JELLYFIN_URL || 'http://65.21.197.246:8096';
+const JELLYFIN_API_KEY = process.env.JELLYFIN_API_KEY || 'b54906fda5c5432ab6cdac3e4f566c2e';
 
 // Load or initialize data
 let data = {
@@ -55,13 +55,15 @@ function nextId(arr) {
     return arr.length > 0 ? Math.max(...arr.map(x => x.id)) + 1 : 1;
 }
 
-// Jellyfin API Helper
+// Jellyfin API Helper - Fixed version
 async function jellyfinRequest(endpoint, method = 'GET', body = null) {
+    const url = `${JELLYFIN_URL}${endpoint}`;
     const options = {
         method,
         headers: {
             'X-Emby-Token': JELLYFIN_API_KEY,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         }
     };
     
@@ -70,24 +72,105 @@ async function jellyfinRequest(endpoint, method = 'GET', body = null) {
     }
     
     try {
-        const response = await fetch(`${JELLYFIN_URL}${endpoint}`, options);
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
+        console.log(`Jellyfin API: ${method} ${url}`);
+        const response = await fetch(url, options);
+        console.log(`Jellyfin Status: ${response.status}`);
+        
+        // Always try to read the response
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            console.log(`Jellyfin Data:`, JSON.stringify(data).substring(0, 200));
+            return data;
+        } else {
+            const text = await response.text();
+            console.log(`Jellyfin Text:`, text.substring(0, 200));
+            if (!text || text.trim() === '') {
+                return response.ok ? {} : null;
+            }
+            try {
+                return JSON.parse(text);
+            } catch {
+                return response.ok ? {} : null;
+            }
+        }
     } catch (err) {
-        console.error('Jellyfin API Error:', err.message);
+        console.error(`Jellyfin API Error: ${endpoint}`, err.message);
         return null;
     }
 }
 
-// Create Jellyfin User
+// Enable Jellyfin User
+async function enableJellyfinUser(jellyfinId) {
+    if (!jellyfinId) return;
+    
+    await jellyfinRequest(`/Users/${jellyfinId}/Policy`, 'POST', {
+        IsAdministrator: false,
+        IsHidden: false,
+        IsDisabled: false,
+        EnableAllDevices: true,
+        EnableAllFolders: true,
+        EnableAllChannels: false,
+        EnableRemoteAccess: true,
+        EnableMediaPlayback: true,
+        EnableContentDownloading: false,
+        EnableSyncTranscoding: false,
+        EnableMediaConversion: false,
+        AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
+        PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider"
+    });
+}
+
+// Disable Jellyfin User
+async function disableJellyfinUser(jellyfinId) {
+    if (!jellyfinId) return;
+    
+    await jellyfinRequest(`/Users/${jellyfinId}/Policy`, 'POST', {
+        IsAdministrator: false,
+        IsHidden: true,
+        IsDisabled: true,
+        EnableAllDevices: false,
+        EnableAllFolders: false,
+        EnableAllChannels: false,
+        EnableRemoteAccess: false,
+        EnableMediaPlayback: false,
+        EnableContentDownloading: false,
+        EnableSyncTranscoding: false,
+        EnableMediaConversion: false,
+        AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
+        PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider"
+    });
+}
+
+// Create Jellyfin User - Direct implementation
 async function createJellyfinUser(username, password = '') {
+    const userPassword = password || Math.random().toString(36).slice(-8);
+    
     try {
-        // Create user
-        const result = await jellyfinRequest('/Users/New', 'POST', {
-            Name: username,
-            Password: password || Math.random().toString(36).slice(-8)
+        console.log(`Creating Jellyfin user: ${username}`);
+        
+        // Create user - direct fetch
+        const createResponse = await fetch(`${JELLYFIN_URL}/Users/New`, {
+            method: 'POST',
+            headers: {
+                'X-Emby-Token': JELLYFIN_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                Name: username,
+                Password: userPassword
+            })
         });
         
+        const createText = await createResponse.text();
+        console.log(`Create response: ${createResponse.status} - ${createText.substring(0, 200)}`);
+        
+        if (!createText || createText.trim() === '') {
+            console.error('Jellyfin returned empty response for user creation');
+            return null;
+        }
+        
+        const result = JSON.parse(createText);
         if (!result || !result.Id) {
             console.error('Failed to create Jellyfin user:', result);
             return null;
@@ -96,36 +179,31 @@ async function createJellyfinUser(username, password = '') {
         const userId = result.Id;
         console.log(`Created Jellyfin user: ${username} (${userId})`);
         
-        // Set strict policy - NO downloads, streaming only
-        const policy = {
-            IsAdministrator: false,
-            IsHidden: true,
-            IsDisabled: false,
-            EnableAllDevices: true,
-            EnableAllFolders: true,
-            EnableAllChannels: false,
-            EnableRemoteAccess: true,
-            EnableMediaPlayback: true,
-            EnableAudioPlaybackTranscoding: true,
-            EnableVideoPlaybackTranscoding: true,
-            EnablePlaybackRemuxing: true,
-            EnableContentDownloading: false,
-            EnableSyncTranscoding: false,
-            EnableMediaConversion: false,
-            EnableContentDeletion: false,
-            EnableRemoteControlOfOtherUsers: false,
-            EnableSharedDeviceControl: false,
-            EnableLiveTvManagement: false,
-            EnableLiveTvAccess: false,
-            EnableUserPreferenceAccess: true,
-            AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
-            PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider",
-            SyncPlayAccess: "None"
-        };
+        // Set policy
+        const policyResponse = await fetch(`${JELLYFIN_URL}/Users/${userId}/Policy`, {
+            method: 'POST',
+            headers: {
+                'X-Emby-Token': JELLYFIN_API_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                IsAdministrator: false,
+                IsHidden: true,
+                IsDisabled: false,
+                EnableAllDevices: true,
+                EnableAllFolders: true,
+                EnableAllChannels: false,
+                EnableRemoteAccess: true,
+                EnableMediaPlayback: true,
+                EnableContentDownloading: false,
+                EnableSyncTranscoding: false,
+                EnableMediaConversion: false,
+                AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
+                PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider"
+            })
+        });
         
-        const policyResult = await jellyfinRequest(`/Users/${userId}/Policy`, 'POST', policy);
-        
-        console.log(`Policy set for user ${username}:`, policyResult ? 'success' : 'failed');
+        console.log(`Policy response: ${policyResponse.status}`);
         
         return userId;
     } catch (err) {
@@ -516,8 +594,13 @@ app.get('/admin/clients', requireAdmin, async (req, res) => {
     // Get last activity from Jellyfin
     let jellyfinUsers = [];
     try {
-        const response = await fetch(`${JELLYFIN_URL}/Users?api_key=${JELLYFIN_API_KEY}`);
-        jellyfinUsers = await response.json();
+        const response = await fetch(`${JELLYFIN_URL}/Users`, {
+            headers: { 'X-Emby-Token': JELLYFIN_API_KEY }
+        });
+        const text = await response.text();
+        if (text && text.trim()) {
+            jellyfinUsers = JSON.parse(text);
+        }
     } catch (err) {
         console.error('Error fetching Jellyfin users:', err);
     }
@@ -795,8 +878,13 @@ app.get('/reseller', requireReseller, async (req, res) => {
     // Get last activity from Jellyfin
     let jellyfinUsers = [];
     try {
-        const response = await fetch(`${JELLYFIN_URL}/Users?api_key=${JELLYFIN_API_KEY}`);
-        jellyfinUsers = await response.json();
+        const response = await fetch(`${JELLYFIN_URL}/Users`, {
+            headers: { 'X-Emby-Token': JELLYFIN_API_KEY }
+        });
+        const text = await response.text();
+        if (text && text.trim()) {
+            jellyfinUsers = JSON.parse(text);
+        }
     } catch (err) {
         console.error('Error fetching Jellyfin users:', err);
     }
@@ -871,13 +959,16 @@ app.post('/reseller/trial/create', requireReseller, async (req, res) => {
     
     // Check if username exists on Jellyfin
     try {
-        const jellyfinUsers = await jellyfinRequest('/Users?api_key=' + JELLYFIN_API_KEY);
-        const jellyfinExists = jellyfinUsers && jellyfinUsers.some(u => u.Name.toLowerCase() === username.toLowerCase());
-        if (jellyfinExists) {
-            return res.json({ success: false, error: 'Username already exists on Jellyfin. Please choose a different username.' });
+        const jellyfinUsers = await jellyfinRequest('/Users');
+        if (jellyfinUsers && Array.isArray(jellyfinUsers)) {
+            const jellyfinExists = jellyfinUsers.some(u => u.Name.toLowerCase() === username.toLowerCase());
+            if (jellyfinExists) {
+                return res.json({ success: false, error: 'Username already exists on Jellyfin. Please choose a different username.' });
+            }
         }
     } catch (err) {
         console.error('Error checking Jellyfin users:', err);
+        // Continue anyway - we'll try to create the user
     }
     
     // Generate password if not provided
@@ -1231,8 +1322,8 @@ async function checkExpiredTrials() {
     }
 }
 
-// Run every 5 minutes
-setInterval(checkExpiredTrials, 5 * 60 * 1000);
+// Run every 30 minutes to reduce Jellyfin load
+setInterval(checkExpiredTrials, 30 * 60 * 1000);
 
 // ========== API ROUTES ==========
 

@@ -665,6 +665,9 @@
                                             <button class="btn btn-sm" onclick="editClientNote(<%= c.id %>, '<%= c.username %>')" style="margin-left: 5px; background: rgba(234, 179, 8, 0.2); color: #facc15;">
                                                 📝 Note
                                             </button>
+                                            <button class="btn btn-sm <%= c.disabled ? 'btn-success' : 'btn-danger' %>" onclick="toggleClient(<%= c.id %>, '<%= c.username %>', <%= c.disabled ? true : false %>)" style="margin-left: 5px;">
+                                                <%= c.disabled ? 'Enable' : 'Disable' %>
+                                            </button>
                                             <button class="btn btn-sm btn-danger" onclick="deleteClient(<%= c.id %>, '<%= c.username %>')" style="margin-left: 5px;">
                                                 Delete
                                             </button>
