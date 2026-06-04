@@ -916,7 +916,7 @@
             const credits = document.getElementById('addCreditsAmount').value;
             const trialCredits = document.getElementById('addTrialCreditsAmount').value;
             
-            const res = await fetch('/admin/reseller/add-credits', {
+            const res = await fetch('/admin/reseller/credits', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
