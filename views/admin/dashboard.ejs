@@ -762,19 +762,21 @@
     <div class="modal-overlay" id="addCreditsModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="modal-title">Add Credits</h3>
+                <h3 class="modal-title">💰 Add Credits</h3>
                 <button class="modal-close" onclick="closeModal('addCreditsModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="addCreditsForm">
                     <input type="hidden" name="resellerId" id="creditsResellerId">
                     <div class="form-group">
-                        <label>Credits Amount</label>
-                        <input type="number" name="credits" min="1" required>
+                        <label>Regular Credits</label>
+                        <p style="color: #64748b; font-size: 12px; margin-bottom: 8px;">Used for extending trials</p>
+                        <input type="number" name="credits" id="addCreditsAmount" min="0" value="10" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
                     </div>
-                    <div class="form-group">
-                        <label>Note</label>
-                        <textarea name="note" placeholder="Optional note..."></textarea>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Trial Credits</label>
+                        <p style="color: #64748b; font-size: 12px; margin-bottom: 8px;">Used for creating new trials (1 trial = 1 credit)</p>
+                        <input type="number" name="trialCredits" id="addTrialCreditsAmount" min="0" value="0" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
                     </div>
                 </form>
             </div>
@@ -904,29 +906,32 @@
         // Add credits modal
         function openAddCreditsModal(resellerId) {
             document.getElementById('creditsResellerId').value = resellerId;
+            document.getElementById('addCreditsAmount').value = 10;
+            document.getElementById('addTrialCreditsAmount').value = 0;
             openModal('addCreditsModal');
         }
         
         async function addCredits() {
-            const form = document.getElementById('addCreditsForm');
-            const formData = new FormData(form);
+            const resellerId = document.getElementById('creditsResellerId').value;
+            const credits = document.getElementById('addCreditsAmount').value;
+            const trialCredits = document.getElementById('addTrialCreditsAmount').value;
             
-            const data = {
-                resellerId: formData.get('resellerId'),
-                credits: formData.get('credits'),
-                note: formData.get('note')
-            };
-            
-            const res = await fetch('/admin/reseller/credits', {
+            const res = await fetch('/admin/reseller/add-credits', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    resellerId: resellerId,
+                    credits: parseInt(credits) || 0,
+                    trialCredits: parseInt(trialCredits) || 0
+                })
             }).then(r => r.json());
             
             if (res.success) {
+                closeModal('addCreditsModal');
+                alert('Added ' + credits + ' regular credits and ' + trialCredits + ' trial credits!');
                 location.reload();
             } else {
-                alert('Failed to add credits');
+                alert('Failed to add credits: ' + (res.error || 'Unknown error'));
             }
         }
         

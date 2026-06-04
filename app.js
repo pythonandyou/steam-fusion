@@ -484,31 +484,40 @@ app.post('/admin/reseller/create', requireAdmin, (req, res) => {
 
 // Add credits to reseller
 app.post('/admin/reseller/credits', requireAdmin, (req, res) => {
-    const { resellerId, credits, note } = req.body;
+    const { resellerId, credits, trialCredits } = req.body;
     const reseller = data.resellers.find(r => r.id === parseInt(resellerId));
     
     if (!reseller) {
         return res.json({ success: false, error: 'Reseller not found' });
     }
     
-    const amount = parseInt(credits);
-    reseller.credits += amount;
+    // Add regular credits
+    if (credits && parseInt(credits) !== 0) {
+        const amount = parseInt(credits);
+        reseller.credits += amount;
+        
+        data.creditTransactions.push({
+            id: nextId(data.creditTransactions),
+            resellerId: parseInt(resellerId),
+            amount,
+            type: 'add',
+            note: 'Added by admin',
+            createdAt: new Date().toISOString(),
+            createdBy: req.session.adminId
+        });
+    }
     
-    // If adding credits to a client with existing expiry, extend it
-    // (This is handled when reseller extends - this is just for purchasing credits)
-    
-    data.creditTransactions.push({
-        id: nextId(data.creditTransactions),
-        resellerId: parseInt(resellerId),
-        amount,
-        type: 'add',
-        note: note || '',
-        createdAt: new Date().toISOString(),
-        createdBy: req.session.adminId
-    });
+    // Add trial credits
+    if (trialCredits && parseInt(trialCredits) !== 0) {
+        reseller.trialCredits = (reseller.trialCredits || 0) + parseInt(trialCredits);
+    }
     
     saveData();
-    res.json({ success: true });
+    res.json({ 
+        success: true,
+        credits: reseller.credits,
+        trialCredits: reseller.trialCredits || 0
+    });
 });
 
 // Toggle reseller active status
@@ -919,7 +928,7 @@ app.get('/reseller', requireReseller, async (req, res) => {
         clients, 
         messages,
         contentRequests,
-        canGiveTrial: reseller.credits >= 2
+        canGiveTrial: (reseller.trialCredits || 0) >= 1
     });
 });
 
