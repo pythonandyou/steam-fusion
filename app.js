@@ -288,8 +288,16 @@ function requireAdmin(req, res, next) {
 }
 
 function requireReseller(req, res, next) {
-    if (req.session.resellerId) return next();
-    res.redirect('/login');
+    if (!req.session.resellerId) return res.redirect('/login');
+    
+    // Check if reseller is active
+    const reseller = data.resellers.find(r => r.id === req.session.resellerId);
+    if (!reseller || reseller.active === false) {
+        req.session.destroy();
+        return res.redirect('/login?disabled=1');
+    }
+    
+    next();
 }
 
 // ========== LOGIN ROUTES ==========
@@ -301,7 +309,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    res.render('login', { error: null });
+    const error = req.query.disabled ? 'Your account has been disabled. Please contact support.' : null;
+    res.render('login', { error });
 });
 
 app.post('/login', (req, res) => {
