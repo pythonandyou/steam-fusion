@@ -961,8 +961,9 @@ app.post('/reseller/trial/create', requireReseller, async (req, res) => {
     const { username, password } = req.body;
     const reseller = data.resellers.find(r => r.id === req.session.resellerId);
     
-    if (reseller.credits < 2) {
-        return res.json({ success: false, error: 'Insufficient credits. You need at least 2 credits.' });
+    // Check trial credits (not regular credits)
+    if ((reseller.trialCredits || 0) < 1) {
+        return res.json({ success: false, error: 'Insufficient trial credits. You need 1 trial credit to create a trial.' });
     }
     
     if (!username) {
@@ -999,6 +1000,9 @@ app.post('/reseller/trial/create', requireReseller, async (req, res) => {
         return res.json({ success: false, error: 'Failed to create user on Jellyfin. Please try again.' });
     }
     
+    // Deduct trial credit
+    reseller.trialCredits = (reseller.trialCredits || 0) - 1;
+    
     const now = new Date();
     const trialEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours trial
     
@@ -1021,17 +1025,18 @@ app.post('/reseller/trial/create', requireReseller, async (req, res) => {
         jellyfinId,
         username,
         password: userPassword,
-        jellyfinUrl: JELLYFIN_URL
+        jellyfinUrl: JELLYFIN_URL,
+        trialCreditsLeft: reseller.trialCredits
     });
 });
 
-// Extend trial by adding months (deduct 1 credit per month)
+// Extend trial by adding months (gives trial credit back)
 app.post('/reseller/trial/extend', requireReseller, async (req, res) => {
     const { clientId, months } = req.body;
     const reseller = data.resellers.find(r => r.id === req.session.resellerId);
     const monthsToAdd = parseInt(months) || 1;
     
-    console.log(`Extend request: clientId=${clientId}, months=${monthsToAdd}, reseller.credits=${reseller?.credits}`);
+    console.log(`Extend request: clientId=${clientId}, months=${monthsToAdd}, reseller.credits=${reseller?.credits}, reseller.trialCredits=${reseller?.trialCredits}`);
     
     if (!reseller) {
         return res.json({ success: false, error: 'Reseller not found' });
@@ -1068,6 +1073,9 @@ app.post('/reseller/trial/extend', requireReseller, async (req, res) => {
     // Deduct credits
     reseller.credits -= monthsToAdd;
     
+    // Give trial credit back (1 per month extended)
+    reseller.trialCredits = (reseller.trialCredits || 0) + monthsToAdd;
+    
     data.creditTransactions.push({
         id: nextId(data.creditTransactions),
         resellerId: req.session.resellerId,
@@ -1078,8 +1086,14 @@ app.post('/reseller/trial/extend', requireReseller, async (req, res) => {
     });
     
     saveData();
-    console.log(`Extended successfully. New credits: ${reseller.credits}, New end: ${newEnd.toISOString()}`);
-    res.json({ success: true, newEnd: newEnd.toISOString() });
+    console.log(`Extended successfully. Credits: ${reseller.credits}, TrialCredits: ${reseller.trialCredits}, New end: ${newEnd.toISOString()}`);
+    res.json({ 
+        success: true, 
+        newEnd: newEnd.toISOString(),
+        creditsLeft: reseller.credits,
+        trialCreditsLeft: reseller.trialCredits,
+        trialCreditsReceived: monthsToAdd
+    });
 });
 
 // Get expiring clients for reseller (within 3 days)

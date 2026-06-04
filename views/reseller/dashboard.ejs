@@ -894,7 +894,7 @@
             }).then(r => r.json());
             
             if (res.success) {
-                alert('Trial created! User can login to Jellyfin now.');
+                alert(`Trial created!\n\nUsername: ${res.username}\nPassword: ${res.password}\n\nTrial credits left: ${res.trialCreditsLeft}\n\nUser can login to Jellyfin now.`);
                 location.reload();
             } else {
                 alert(res.error || 'Failed to create trial');
@@ -903,7 +903,7 @@
         
         // Extend trial
         async function extendTrial(clientId, months) {
-            if (!confirm(`Add ${months} month(s) to this client? This will cost ${months} credit(s).`)) return;
+            if (!confirm(`Add ${months} month(s) to this client? This will cost ${months} credit(s) and you will receive ${months} trial credit(s) back.`)) return;
             
             const res = await fetch('/reseller/trial/extend', {
                 method: 'POST',
@@ -912,7 +912,7 @@
             }).then(r => r.json());
             
             if (res.success) {
-                alert(`Extended by ${months} month(s)! New expiry: ${new Date(res.newEnd).toLocaleDateString()}`);
+                alert(`Extended by ${months} month(s)!\n\nNew expiry: ${new Date(res.newEnd).toLocaleDateString()}\nTrial credits received: ${res.trialCreditsReceived}\nYour trial credits: ${res.trialCreditsLeft}`);
                 location.reload();
             } else {
                 alert(res.error || 'Failed to extend');
