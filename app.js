@@ -774,6 +774,31 @@ app.get('/admin/expiring-clients', requireAdmin, (req, res) => {
     res.json(expiringClients);
 });
 
+// Toggle client (admin)
+app.post('/admin/client/toggle', requireAdmin, async (req, res) => {
+    const { clientId } = req.body;
+    const client = data.clients.find(c => c.id === parseInt(clientId));
+    
+    if (!client) {
+        return res.json({ success: false, error: 'Client not found' });
+    }
+    
+    // Toggle disabled status
+    client.disabled = client.disabled ? false : true;
+    
+    // Update Jellyfin - disable/enable user
+    if (client.jellyfinId) {
+        if (client.disabled) {
+            await disableJellyfinUser(client.jellyfinId);
+        } else {
+            await enableJellyfinUser(client.jellyfinId);
+        }
+    }
+    
+    saveData();
+    res.json({ success: true, disabled: client.disabled });
+});
+
 // Delete client (admin)
 app.post('/admin/client/delete', requireAdmin, async (req, res) => {
     const { clientId } = req.body;
@@ -1294,6 +1319,31 @@ app.get('/reseller/client/:id/credentials', requireReseller, (req, res) => {
         expires: client.trialEnd,
         note: client.note || ''
     });
+});
+
+// Toggle client (enable/disable)
+app.post('/reseller/client/toggle', requireReseller, async (req, res) => {
+    const { clientId } = req.body;
+    const client = data.clients.find(c => c.id === parseInt(clientId) && c.resellerId === req.session.resellerId);
+    
+    if (!client) {
+        return res.json({ success: false, error: 'Client not found' });
+    }
+    
+    // Toggle disabled status
+    client.disabled = client.disabled ? false : true;
+    
+    // Update Jellyfin - disable/enable user
+    if (client.jellyfinId) {
+        if (client.disabled) {
+            await disableJellyfinUser(client.jellyfinId);
+        } else {
+            await enableJellyfinUser(client.jellyfinId);
+        }
+    }
+    
+    saveData();
+    res.json({ success: true, disabled: client.disabled });
 });
 
 // Delete client

@@ -1199,6 +1199,25 @@
             }
         }
         
+        // Toggle client (enable/disable)
+        async function toggleClient(clientId, username, isDisabled) {
+            const action = isDisabled ? 'enable' : 'disable';
+            if (!confirm(`Are you sure you want to ${action} "${username}"?`)) return;
+            
+            const res = await fetch('/reseller/client/toggle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({clientId})
+            }).then(r => r.json());
+            
+            if (res.success) {
+                alert(`${username} has been ${res.disabled ? 'disabled' : 'enabled'}!`);
+                location.reload();
+            } else {
+                alert(res.error || 'Failed to toggle');
+            }
+        }
+        
         // Delete client
         async function deleteClient(clientId, username) {
             if (!confirm(`Are you sure you want to delete "${username}"? This will also remove them from Jellyfin. This cannot be undone!`)) return;
