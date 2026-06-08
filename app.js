@@ -106,7 +106,7 @@ async function enableJellyfinUser(jellyfinId) {
     
     await jellyfinRequest(`/Users/${jellyfinId}/Policy`, 'POST', {
         IsAdministrator: false,
-        IsHidden: false,
+        IsHidden: true, // Keep hidden from login screen
         IsDisabled: false,
         EnableAllDevices: true,
         EnableAllFolders: true,
@@ -527,9 +527,13 @@ app.post('/admin/reseller/credits', requireAdmin, (req, res) => {
         });
     }
     
-    // Add trial credits
+    // Add trial credits (max 20)
     if (trialCredits && parseInt(trialCredits) !== 0) {
-        reseller.trialCredits = (reseller.trialCredits || 0) + parseInt(trialCredits);
+        const newCredits = (reseller.trialCredits || 0) + parseInt(trialCredits);
+        if (newCredits > 20) {
+            return res.json({ success: false, error: 'Trial credits cannot exceed 20. Current: ' + (reseller.trialCredits || 0) });
+        }
+        reseller.trialCredits = newCredits;
     }
     
     saveData();
@@ -1111,8 +1115,9 @@ app.post('/reseller/trial/extend', requireReseller, async (req, res) => {
     // Deduct credits
     reseller.credits -= monthsToAdd;
     
-    // Give trial credit back (1 per month extended)
-    reseller.trialCredits = (reseller.trialCredits || 0) + monthsToAdd;
+    // Give trial credit back (1 per month extended, max 20)
+    const newTrialCredits = Math.min(20, (reseller.trialCredits || 0) + monthsToAdd);
+    reseller.trialCredits = newTrialCredits;
     
     data.creditTransactions.push({
         id: nextId(data.creditTransactions),
