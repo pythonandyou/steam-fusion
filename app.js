@@ -242,7 +242,7 @@ async function enableJellyfinUser(jellyfinId) {
     
     await jellyfinRequest(`/Users/${jellyfinId}/Policy`, 'POST', {
         IsAdministrator: false,
-        IsHidden: false,
+        IsHidden: true, // Keep hidden from login screen
         IsDisabled: false,
         EnableAllDevices: true,
         EnableAllFolders: true,
@@ -260,11 +260,6 @@ async function enableJellyfinUser(jellyfinId) {
         EnableSharedDeviceControl: false,
         EnableLiveTvManagement: false,
         EnableLiveTvAccess: true,
-        EnableContentDownloading: false,
-        EnableSyncTranscoding: false,
-        EnableMediaConversion: false,
-        EnableContentDeletion: false,
-        EnableRemoteControlOfOtherUsers: false,
         EnableUserPreferenceAccess: true,
         AuthenticationProviderId: "Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider",
         PasswordResetProviderId: "Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider",
